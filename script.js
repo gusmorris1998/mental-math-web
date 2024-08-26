@@ -5,7 +5,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 var running = false;
 var selected;
 var settings;
-var startButton;
+var button;
+var interval;
 
 mode.addEventListener("change", function() { 
     selected = mode.value;
@@ -14,31 +15,38 @@ mode.addEventListener("change", function() {
 })
 
 function handleSelection(selection) {
-    if ( startButton ) { container.removeChild(startButton) }
+    if ( button ) { container.removeChild(button) }
     if ( settings ) { container.removeChild(settings.parent) }
 
     switch (selection) {
         case 'addition':
             settings = initializeAddition()
-            startButton = createButton()
+            button = createStartButton()
             break;
         default:
             settings = null;
-            startButton = null;
+            button = null;
             break;
        }
-       
+
        if (settings) { 
             settings.parent.setAttribute("id", "settings")
             container.appendChild(settings.parent); 
-            container.appendChild(startButton)
+            container.appendChild(button)
             console.log(container)
        }
 }
 
 function handleRuntime() {
-    switch (selected) {
-
+    if (!running) {
+        running = true;
+        if (button) { 
+            container.removeChild(button);
+            button = createStopButton();
+            container.appendChild(button);
+        }
+        
+        run(selected);
     }
 }
 
@@ -53,19 +61,25 @@ function initializeAddition() {
     return settings
 }
 
-async function runAddition() {
-    const numRange1 = parseInt('9'.repeat(settings.numDigitsSlider1.value));
-    const numRange2 = parseInt('9'.repeat(settings.numDigitsSlider2.value));
-    const delay = settings.delaySlider.value
+// To replace runAddition
+function run(selection) {
+    if (!running) return; // Stop if running is set to false
 
-    while ( running ) {
-        var int1 = getRandomInt(numRange1)
-        var int2 = getRandomInt(numRange2)
-        console.log(int1 + " + " + int2)
-        
-        await sleep(delay * 1000);
+    let equation;
+    const int1 = getRandomInt(parseInt('9'.repeat(settings.numDigitsSlider1.value)));
+    const int2 = getRandomInt(parseInt('9'.repeat(settings.numDigitsSlider2.value)));
+    const delay = settings.delaySlider.value * 1000;
 
-        console.log(int1 + int2)
+    switch (selection) {
+        case 'addition':
+            equation = `${int1} + ${int2}`;
+            console.log(equation);
+
+            setTimeout(() => {
+                const answer = int1 + int2;
+                console.log(`Answer: ${answer}`);
+                run(selection); // Start the next round after the current delay
+            }, delay);
     }
 }
 
@@ -79,21 +93,32 @@ function createSlider(min, max) {
     return slider
 }
 
-function createButton() {
+function createStartButton() {
     let button = document.createElement("button");
 
     button.textContent = "Start";
     button.setAttribute("class", "start");
 
-    button.addEventListener("click", function() {
-        switch (selected) {
-            case 'addition':
-                running = true;
-                runAddition()
-        }
-    })
+    button.addEventListener("click", handleRuntime)
 
     return button
+}
+
+function createStopButton() {
+    let button = document.createElement("button");
+
+    button.textContent = "Stop";
+    button.setAttribute("class", "stop");
+
+    button.addEventListener("click", stop)
+
+    return button
+}
+
+function stop() {
+    runnng = false;
+
+    handleSelection(selected);
 }
 
 function Settings(config) {
