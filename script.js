@@ -1,3 +1,5 @@
+import { convertTextToMP3 } from "./tts.js";
+
 const mode = document.querySelector("#mode-select");
 const container = document.querySelector('#container');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -74,6 +76,7 @@ function run(selection) {
         case 'addition':
             equation = `${int1} + ${int2}`;
             console.log(equation);
+            convertTextToMP3()
 
             setTimeout(() => {
                 const answer = int1 + int2;
@@ -134,4 +137,5 @@ function Settings(config) {
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
-  }
+}
+
