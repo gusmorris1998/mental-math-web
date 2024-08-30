@@ -1,5 +1,3 @@
-import { convertTextToMP3 } from "./tts.js";
-
 const mode = document.querySelector("#mode-select");
 const container = document.querySelector('#container');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -53,7 +51,7 @@ function handleRuntime() {
 }
 
 function initializeAddition() {
-    config = {
+    const config = {
         numDigitsSlider1: createSlider(1,5),
         numDigitsSlider2: createSlider(1,5),
         delaySlider: createSlider(1,20),
@@ -76,7 +74,22 @@ function run(selection) {
         case 'addition':
             equation = `${int1} + ${int2}`;
             console.log(equation);
-            convertTextToMP3()
+
+            // Play audio from the server
+            fetch(`http://localhost:3000/convert?text=${encodeURIComponent(equation)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const audio = new Audio(url);
+                    console.log(audio);
+                    audio.play();
+                })
+                .catch(error => console.error('Error:', error));
 
             setTimeout(() => {
                 const answer = int1 + int2;
