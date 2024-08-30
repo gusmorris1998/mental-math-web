@@ -24,7 +24,7 @@ async function convertTextToMP3(text) {
 
     const [response] = await client.synthesizeSpeech(request);
     const writeFile = util.promisify(fs.writeFile);
-    const filePath = path.join(__dirname, 'output.mp3');
+    const filePath = path.join(__dirname, 'temp','output.mp3');
 
     await writeFile(filePath, response.audioContent, 'binary');
     console.log("Audio file completed");
@@ -42,6 +42,7 @@ app.get('/convert', async (req, res) => {
 
     try {
         const filePath = await convertTextToMP3(text);
+        
         res.sendFile(filePath, (err) => {
             if (err) {
                 console.error('Error sending file:', err);

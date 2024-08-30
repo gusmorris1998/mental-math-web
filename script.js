@@ -8,7 +8,8 @@ var settings;
 var button;
 var interval;
 
-mode.addEventListener("change", function() { 
+mode.addEventListener("change",  (event) => {
+    event.preventDefault(); // Prevent default action 
     selected = mode.value;
 
     handleSelection(selected)
@@ -38,6 +39,7 @@ function handleSelection(selection) {
 }
 
 function handleRuntime() {
+    console.log("handleRuntime called");
     if (!running) {
         running = true;
         if (button) { 
@@ -50,6 +52,7 @@ function handleRuntime() {
     }
 }
 
+
 function initializeAddition() {
     const config = {
         numDigitsSlider1: createSlider(1,5),
@@ -61,41 +64,30 @@ function initializeAddition() {
     return settings
 }
 
-// To replace runAddition
-function run(selection) {
-    if (!running) return; // Stop if running is set to false
 
+function run(selection) {
     let equation;
     const int1 = getRandomInt(parseInt('9'.repeat(settings.numDigitsSlider1.value)));
     const int2 = getRandomInt(parseInt('9'.repeat(settings.numDigitsSlider2.value)));
     const delay = settings.delaySlider.value * 1000;
 
-    switch (selection) {
-        case 'addition':
-            equation = `${int1} + ${int2}`;
-            console.log(equation);
+    if (running) {
+        switch (selection) {
+            case 'addition':
+                equation = `${int1}+${int2}`;
+                console.log("Equation:", equation);
 
-            // Play audio from the server
-            fetch(`http://localhost:3000/convert?text=${encodeURIComponent(equation)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    const url = URL.createObjectURL(blob);
-                    const audio = new Audio(url);
-                    console.log(audio);
-                    audio.play();
-                })
-                .catch(error => console.error('Error:', error));
+                // Fetch audio for the equation
+                fetchAudio(equation);
 
-            setTimeout(() => {
-                const answer = int1 + int2;
-                console.log(`Answer: ${answer}`);
-                run(selection); // Start the next round after the current delay
-            }, delay);
+                setTimeout(() => {
+                    const answer = int1 + int2;
+                    console.log(`Answer: ${answer}`);
+                    fetchAudio(answer);
+                    setTimeout(() => {run(selection)}, 5000) // Start the next round after the current delay
+                }, delay);
+                break;
+        }
     }
 }
 
@@ -115,10 +107,15 @@ function createStartButton() {
     button.textContent = "Start";
     button.setAttribute("class", "start");
 
-    button.addEventListener("click", handleRuntime)
+    button.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent default action
+        console.log("Start button clicked");
+        handleRuntime();
+    });
 
-    return button
+    return button;
 }
+
 
 function createStopButton() {
     let button = document.createElement("button");
@@ -126,13 +123,18 @@ function createStopButton() {
     button.textContent = "Stop";
     button.setAttribute("class", "stop");
 
-    button.addEventListener("click", stop)
+    button.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent default action
+        console.log("Stop button clicked");
+        stop();
+    });
 
-    return button
+    return button;
 }
 
 function stop() {
-    runnng = false;
+    console.log("stop called");
+    running = false;
 
     handleSelection(selected);
 }
@@ -152,3 +154,24 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 
+function fetchAudio(text) {
+    console.log("Fetching audio for equation:", text);
+    fetch(`http://localhost:3000/convert?text=${encodeURIComponent(text)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }   
+            return response.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            console.log("Audio object created:", audio);
+            audio.play().then(() => {
+                console.log("Audio playback started");
+            }).catch(error => {
+                console.error("Error during audio playback:", error);
+            });
+        })
+        .catch(error => console.error('Error:', error));
+}
